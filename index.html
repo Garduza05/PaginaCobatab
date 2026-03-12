@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coba Face</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    /* ══════════════════════════════════════
+       LIGHTBOX — Visor de imagen expandida
+       ══════════════════════════════════════ */
+    .lightbox-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.93);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .28s ease;
+    }
+    .lightbox-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .lightbox-content {
+      max-width: 93vw;
+      max-height: 93vh;
+      transform: scale(.9);
+      transition: transform .28s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lightbox-overlay.active .lightbox-content {
+      transform: scale(1);
+    }
+    .lightbox-content img {
+      max-width: 93vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.9);
+      display: block;
+    }
+    /* Botón cerrar */
+    .lb-close {
+      position: fixed;
+      top: 16px; right: 18px;
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.15);
+      border: none;
+      color: #fff;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(6px);
+      transition: background .2s;
+      z-index: 10000;
+    }
+    .lb-close:hover { background: rgba(255,255,255,.3); }
+    /* Pie (nombre de la imagen) */
+    .lb-caption {
+      position: fixed;
+      bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,.65);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .82rem;
+      letter-spacing: .04em;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* ── Cursor y hover en imágenes clickeables ── */
+    .clickable-img {
+      cursor: zoom-in;
+      transition: filter .2s, transform .2s;
+      display: block;
+      width: 100%;
+    }
+    .clickable-img:hover {
+      filter: brightness(1.08);
+    }
+    /* Indicador "expandir" flotante */
+    .post-media { position: relative; }
+    .expand-badge {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: rgba(0,0,0,.5);
+      color: #fff;
+      font-size: .7rem;
+      padding: .28rem .6rem;
+      border-radius: 20px;
+      display: flex; align-items: center; gap: .3rem;
+      opacity: 0;
+      transition: opacity .2s;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+    }
+    .post-media:hover .expand-badge { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- ══ LIGHTBOX ══════════════════════════════ -->
+  <div class="lightbox-overlay" id="lightbox" onclick="lbBgClick(event)">
+    <button class="lb-close" onclick="lbClose()"><i class="fa-solid fa-xmark"></i></button>
+    <div class="lightbox-content">
+      <img id="lbImg" src="" alt="" />
+    </div>
+    <p class="lb-caption" id="lbCaption"></p>
+  </div>
+
+  <!-- ══ NAVBAR ════════════════════════════════ -->
+  <nav class="navbar">
+    <div class="nav-logo">
+      <span class="logo-icon">✦</span>
+      <span class="logo-text">Coba Face</span>
+    </div>
+    <div class="nav-search">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input type="text" placeholder="Buscar personas, publicaciones…" />
+    </div>
+    <div class="nav-actions">
+      <button class="nav-btn active" title="Inicio"><i class="fa-solid fa-house"></i><span>Inicio</span></button>
+      <button class="nav-btn" title="Contactos"><i class="fa-solid fa-user-group"></i><span>Contactos</span></button>
+      <button class="nav-btn" title="Notificaciones"><i class="fa-solid fa-bell"></i><span class="notif-dot"></span></button>
+      <div class="nav-profile">
+        <img src="https://i.pravatar.cc/150?img=5" alt="Mi perfil" class="nav-avatar" />
+        <span>Tú</span>
+        <i class="fa-solid fa-chevron-down" style="font-size:.65rem;opacity:.6"></i>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══ LAYOUT ════════════════════════════════ -->
+  <main class="layout">
+
+    <!-- COLUMNA IZQUIERDA -->
+    <aside class="sidebar-left">
+      <div class="sidebar-card profile-card">
+        <div class="profile-cover"></div>
+       <img src="imagenes/chavodel8.png" alt="Perfil" class="profile-avatar" />
+        <h3 class="profile-name">Roberto Gomez Bolaños</h3>
+        <p class="profile-handle">@ingSistemas</p>
+        <div class="profile-stats">
+          <div class="stat"><strong>284</strong><span>Posts</span></div>
+          <div class="stat"><strong>1.2K</strong><span>Seguidores</span></div>
+          <div class="stat"><strong>340</strong><span>Siguiendo</span></div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="sidebar-link active"><i class="fa-solid fa-house"></i> Inicio</a>
+        <a href="#" class="sidebar-link"><i class="fa-solid fa-compass"></i> Explorar</a>
+        <a href="#" class="sidebar-link"><i class="fa-solid fa-bookmark"></i> Guardados</a>
+        <a href="#" class="sidebar-link"><i class="fa-solid fa-photo-film"></i> Recuerdos</a>
+        <a href="#" class="sidebar-link"><i class="fa-solid fa-gear"></i> Configuración</a>
+      </nav>
+    </aside>
+
+    <!-- FEED -->
+    <section class="feed">
+
+      <!-- Crear publicación -->
+      <div class="create-post">
+        <img src="imagenes/chavodel8.png" alt="Tu foto" class="mini-avatar" />
+        <div class="create-input-wrap">
+          <input type="text" placeholder="¿Qué está pasando, chavo?" class="create-input" />
+          <div class="create-actions">
+            <button class="create-btn"><i class="fa-solid fa-image"></i> Foto</button>
+            <button class="create-btn"><i class="fa-solid fa-video"></i> Video</button>
+            <button class="create-btn"><i class="fa-solid fa-face-smile"></i> Sentimiento</button>
+            <button class="publish-btn">Publicar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PUBLICACIÓN 1 — Imagen ── -->
+      <article class="post-card">
+        <header class="post-header">
+         <img src="imagenes/trump.png" alt="Perfil" class="profile-avatar" />
+
+          <div class="post-meta">
+            <span class="post-author">Donald Trump</span>
+            <span class="post-time"><i class="fa-regular fa-clock"></i> hace 2 horas · <i class="fa-solid fa-earth-americas"></i> Público</span>
+          </div>
+          <button class="post-menu"><i class="fa-solid fa-ellipsis"></i></button>
+        </header>
+        <p class="post-text">Caminando sobre los estudiantes para ser el nuevo direc</p>
+        <div class="post-media">
+          <span class="expand-badge"><i class="fa-solid fa-expand"></i> Ver imagen</span>
+          <img
+            src="imagenes/donaldtrump.jpg"
+            alt="Donald Trump"
+            class="post-image clickable-img"
+            loading="lazy"
+            onclick="lbOpen(this)"
+          />
+        </div>
+        <div class="post-reactions">
+          <span><span class="reaction-emoji">❤️👍😮</span> 142 reacciones</span>
+          <span>28 comentarios · 14 compartidos</span>
+        </div>
+        <div class="post-actions">
+          <button class="action-btn" onclick="toggleLike(this)"><i class="fa-regular fa-heart"></i> Me gusta</button>
+          <button class="action-btn" onclick="toggleComments(this)"><i class="fa-regular fa-comment"></i> Comentar</button>
+          <button class="action-btn"><i class="fa-solid fa-share-nodes"></i> Compartir</button>
+        </div>
+        <div class="comments-section">
+          <div class="comment">
+           <img src="imagenes/putin.png" alt="Perfil" class="profile-avatar" />
+
+            <div class="comment-bubble"><span class="comment-author">Vladimir Putin</span><p>¡Vamos a atacar al cbtis!</p></div>
+          </div>
+          <div class="comment">
+            <img src="imagenes/alatorre.png" alt="Maduro" class="comment-avatar" />
+            <div class="comment-bubble"><span class="comment-author">Nicolas Maduro</span><p>Ya dejame ir pa, ya no abusare de venezuela</p></div>
+          </div>
+          <div class="comment-input-row">
+            <img src="imagenes/chavodel8.png" alt="Tu" class="comment-avatar" />
+            <input type="text" placeholder="Escribe un comentario…" class="comment-input" />
+          </div>
+        </div>
+      </article>
+
+      <!-- ── PUBLICACIÓN 2 — Video ── -->
+      <article class="post-card">
+        <header class="post-header">
+          <img src="imagenes/scarlet.png" alt="Scarlet Johanson" class="post-avatar" />
+          <div class="post-meta">
+            <span class="post-author">Scarlet Johanson</span>
+            <span class="post-time"><i class="fa-regular fa-clock"></i> hace 5 horas · <i class="fa-solid fa-earth-americas"></i> Público</span>
+          </div>
+          <button class="post-menu"><i class="fa-solid fa-ellipsis"></i></button>
+        </header>
+        <p class="post-text">Ya ma quiero irrr....</p>
+        <div class="post-media video-wrapper">
+          <iframe
+            src="imagenes/videoscarlet.mp4"
+            title="Video de Scarlet Johanson"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen loading="lazy">
+          </iframe>
+        </div>
+        <div class="post-reactions">
+          <span><span class="reaction-emoji">❤️🎵🔥</span> 389 reacciones</span>
+          <span>73 comentarios · 52 compartidos</span>
+        </div>
+        <div class="post-actions">
+          <button class="action-btn liked" onclick="toggleLike(this)"><i class="fa-solid fa-heart"></i> Me gusta</button>
+          <button class="action-btn" onclick="toggleComments(this)"><i class="fa-regular fa-comment"></i> Comentar</button>
+          <button class="action-btn"><i class="fa-solid fa-share-nodes"></i> Compartir</button>
+        </div>
+        <div class="comments-section">
+          <div class="comment">
+            <img src="imagenes/stark.png" alt="Stark" class="comment-avatar" />
+
+            <div class="comment-bubble"><span class="comment-author">Tony Stark</span><p>Pues no que te habias muerto natasha</p></div>
+          </div>
+          <div class="comment">
+            <img src="imagenes/hulk.png" alt="Hulk" class="comment-avatar" />
+
+            <div class="comment-bubble"><span class="comment-author">Hulk</span><p>Nat ¡¿donde estas?! te extraño</p></div>
+          </div>
+          <div class="comment-input-row">
+            <img src="imagenes/chavodel8.png" alt="Tu" class="comment-avatar" />
+            <input type="text" placeholder="Escribe un comentario…" class="comment-input" />
+          </div>
+        </div>
+      </article>
+
+      <!-- ── PUBLICACIÓN 3 — Galería ── -->
+      <article class="post-card">
+        <header class="post-header">
+          <img src="imagenes/clau.png" alt="Claudia Sheimbaum" class="post-avatar" />
+          <div class="post-meta">
+            <span class="post-author">Claudia Sheimbaum</span>
+            <span class="post-time"><i class="fa-regular fa-clock"></i> ayer · <i class="fa-solid fa-user-group"></i> Amigos</span>
+          </div>
+          <button class="post-menu"><i class="fa-solid fa-ellipsis"></i></button>
+        </header>
+        <p class="post-text">Vamos a poner mas preparatorias cercas, para que cuando salgan de la secundaria, se vayan a la preparatoria</p>
+
+        <!-- Galería: cada imagen abre el lightbox -->
+        <div class="post-media gallery">
+          <img
+            src="imagenes/image(1).jpg"
+            alt="Arte urbano 1" loading="lazy"
+            class="clickable-img"
+            onclick="lbOpen(this)"
+          />
+          <img
+             src="imagenes/image(2).jpg"
+            alt="Arte urbano 2" loading="lazy"
+            class="clickable-img"
+            onclick="lbOpen(this)"
+          />
+          <img
+             src="imagenes/image(3).jpg"
+            alt="Ciudad" loading="lazy"
+            class="clickable-img"
+            onclick="lbOpen(this)"
+          />
+          
+            <span class="gallery-overlay">+3 más</span>
+          </div>
+        </div>
+
+        <div class="post-reactions">
+          <span><span class="reaction-emoji">❤️😍👏</span> 211 reacciones</span>
+          <span>41 comentarios · 9 compartidos</span>
+        </div>
+        <div class="post-actions">
+          <button class="action-btn" onclick="toggleLike(this)"><i class="fa-regular fa-heart"></i> Me gusta</button>
+          <button class="action-btn" onclick="toggleComments(this)"><i class="fa-regular fa-comment"></i> Comentar</button>
+          <button class="action-btn"><i class="fa-solid fa-share-nodes"></i> Compartir</button>
+        </div>
+        <div class="comments-section">
+          <div class="comment">
+            <img src="imagenes/peje.png" alt="Amlo" class="comment-avatar" />
+
+            <div class="comment-bubble"><span class="comment-author">Andres Manuel Lopez Obrador</span><p>Eres la m....</p></div>
+          </div>
+          <div class="comment">
+            <img src="imagenes/peña.png" alt="Epn" class="comment-avatar" />
+
+            <div class="comment-bubble"><span class="comment-author">Enrique Peña Nieto</span><p>Te pareces tanto a mi cuando dije sobre las tandas para comprar casas</p></div>
+          </div>
+          <div class="comment-input-row">
+            <img src="imagenes/chavodel8.png" alt="Tu" class="comment-avatar" />
+            <input type="text" placeholder="Escribe un comentario…" class="comment-input" />
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- COLUMNA DERECHA -->
+    <aside class="sidebar-right">
+      <div class="sidebar-card contacts-card">
+        <div class="contacts-header">
+          <h4>Contactos</h4>
+          <span class="contacts-count">12 en línea</span>
+        </div>
+        <ul class="contacts-list">
+          <li class="contact-item">
+            <div class="contact-avatar-wrap"><img src="imagenes/chemaney.png" alt="Chemaney" /><span class="status online"></span></div>
+            <span class="contact-name">Chemaney</span>
+            <button class="contact-msg"><i class="fa-regular fa-message"></i></button>
+          </li>
+          <li class="contact-item">
+            <div class="contact-avatar-wrap"><img src="imagenes/elpulpo.png" alt="El pulpo" /><span class="status online"></span></div>
+            <span class="contact-name">El pulpo</span>
+            <button class="contact-msg"><i class="fa-regular fa-message"></i></button>
+          </li>
+          <li class="contact-item">
+            <div class="contact-avatar-wrap"><img src="imagenes/cheo.png" alt="Cheo bernat" /><span class="status online"></span></div>
+            <span class="contact-name">Cheo bernat</span>
+            <button class="contact-msg"><i class="fa-regular fa-message"></i></button>
+          </li>
+          <li class="contact-item">
+            <div class="contact-avatar-wrap"><img src="imagenes/mincho.png" alt="Mincho Marin" /><span class="status away"></span></div>
+            <span class="contact-name">Mincho Marin</span>
+            <button class="contact-msg"><i class="fa-regular fa-message"></i></button>
+          </li>
+          <li class="contact-item">
+            <div class="contact-avatar-wrap"><img src="https://i.pravatar.cc/150?img=33" alt="Andrés" /><span class="status offline"></span></div>
+            <span class="contact-name">Andrés Leal</span>
+            <button class="contact-msg"><i class="fa-regular fa-message"></i></button>
+          </li>
+          <li class="contact-item">
+            <div class="contact-avatar-wrap"><img src="https://i.pravatar.cc/150?img=60" alt="Lucía" /><span class="status online"></span></div>
+            <span class="contact-name">Lucía Vargas</span>
+            <button class="contact-msg"><i class="fa-regular fa-message"></i></button>
+          </li>
+          <li class="contact-item">
+            <div class="contact-avatar-wrap"><img src="https://i.pravatar.cc/150?img=8" alt="Mateo" /><span class="status offline"></span></div>
+            <span class="contact-name">Mateo Silva</span>
+            <button class="contact-msg"><i class="fa-regular fa-message"></i></button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-card suggestions-card">
+        <h4>Personas que quizás conozcas</h4>
+        <div class="suggestion-item">
+          <img src="https://i.pravatar.cc/150?img=19" alt="Panuchos del cbtis" class="suggestion-avatar" />
+          <div class="suggestion-info">
+            <span class="suggestion-name">Panuchos del cbtis</span>
+            <span class="suggestion-mutual">3 amigos en común</span>
+          </div>
+          <button class="follow-btn">Seguir</button>
+        </div>
+        <div class="suggestion-item">
+          <img src="https://i.pravatar.cc/150?img=57" alt="Marco" class="suggestion-avatar" />
+          <div class="suggestion-info">
+            <span class="suggestion-name">Marco Ibáñez</span>
+            <span class="suggestion-mutual">7 amigos en común</span>
+          </div>
+          <button class="follow-btn">Seguir</button>
+        </div>
+        <div class="suggestion-item">
+          <img src="https://i.pravatar.cc/150?img=44" alt="Ines" class="suggestion-avatar" />
+          <div class="suggestion-info">
+            <span class="suggestion-name">Inés Paredes</span>
+            <span class="suggestion-mutual">1 amigo en común</span>
+          </div>
+          <button class="follow-btn">Seguir</button>
+        </div>
+      </div>
+
+      <p class="sidebar-footer">Coba Face &copy; 2025 · Privacidad · Términos · Ayuda</p>
+    </aside>
+
+  </main>
+
+  <!-- ══ JAVASCRIPT ════════════════════════════ -->
+  <script>
+
+    /* ─── LIGHTBOX ─────────────────────────────── */
+    const lb        = document.getElementById('lightbox');
+    const lbImg     = document.getElementById('lbImg');
+    const lbCaption = document.getElementById('lbCaption');
+
+    function lbOpen(img) {
+      // Si es Unsplash, pide versión grande
+      let src = img.src;
+      if (src.includes('unsplash.com')) {
+        src = src.replace(/w=\d+/, 'w=1600').replace(/q=\d+/, 'q=90');
+      }
+      lbImg.src           = src;
+      lbImg.alt           = img.alt;
+      lbCaption.textContent = img.alt || '';
+      lb.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function lbClose() {
+      lb.classList.remove('active');
+      document.body.style.overflow = '';
+      setTimeout(() => { lbImg.src = ''; }, 300);
+    }
+
+    // Clic en el fondo oscuro cierra el lightbox
+    function lbBgClick(e) {
+      if (e.target === lb) lbClose();
+    }
+
+    // Tecla Escape también cierra
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') lbClose();
+    });
+
+    /* ─── ME GUSTA ─────────────────────────────── */
+    function toggleLike(btn) {
+      btn.classList.toggle('liked');
+      if (btn.classList.contains('liked')) {
+        btn.innerHTML = `<i class="fa-solid fa-heart"></i> Me gusta`;
+      } else {
+        btn.innerHTML = `<i class="fa-regular fa-heart"></i> Me gusta`;
+      }
+    }
+
+    /* ─── COMENTARIOS ──────────────────────────── */
+    function toggleComments(btn) {
+      const post     = btn.closest('.post-card');
+      const comments = post.querySelector('.comments-section');
+      comments.classList.toggle('open');
+    }
+
+    /* ─── PUBLICAR CON ENTER ───────────────────── */
+    document.querySelectorAll('.comment-input').forEach(input => {
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && this.value.trim()) {
+          const section    = this.closest('.comments-section');
+          const row        = this.closest('.comment-input-row');
+          const newComment = document.createElement('div');
+          newComment.className = 'comment new-comment';
+          newComment.innerHTML = `
+            <img src="https://i.pravatar.cc/150?img=5" alt="Tú" class="comment-avatar" />
+            <div class="comment-bubble">
+              <span class="comment-author">Roberto Gomez Bolaños (tú)</span>
+              <p>${this.value.trim()}</p>
+            </div>`;
+          section.insertBefore(newComment, row);
+          this.value = '';
+          newComment.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    });
+
+    /* ─── SEGUIR ───────────────────────────────── */
+    document.querySelectorAll('.follow-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        this.textContent = this.textContent === 'Seguir' ? 'Siguiendo ✓' : 'Seguir';
+        this.classList.toggle('following');
+      });
+    });
+
+  </script>
+</body>
+</html>
